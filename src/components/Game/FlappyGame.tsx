@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Bird from './Bird';
 import Obstacle from './Obstacle';
@@ -35,7 +34,6 @@ const FlappyGame: React.FC = () => {
   const gameHeightRef = useRef<number>(0);
   const gameWidthRef = useRef<number>(0);
   
-  // Load high score from localStorage
   useEffect(() => {
     const savedHighScore = localStorage.getItem('anyoFlappyHighScore');
     if (savedHighScore) {
@@ -43,7 +41,6 @@ const FlappyGame: React.FC = () => {
     }
   }, []);
   
-  // Update container dimensions on resize
   useEffect(() => {
     const updateDimensions = () => {
       if (gameContainerRef.current) {
@@ -60,12 +57,12 @@ const FlappyGame: React.FC = () => {
     };
   }, []);
   
-  // Handle jump on spacebar or tap
   const handleJump = useCallback(() => {
     if (!gameStarted) return;
     
     setBirdVelocity(JUMP_FORCE);
     setIsFlapping(true);
+    
     setTimeout(() => setIsFlapping(false), 300);
     
     if (gameOver) {
@@ -73,7 +70,6 @@ const FlappyGame: React.FC = () => {
     }
   }, [gameStarted, gameOver]);
   
-  // Add event listeners
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
@@ -96,12 +92,10 @@ const FlappyGame: React.FC = () => {
     };
   }, [handleJump]);
   
-  // Game loop
   useEffect(() => {
     if (!gameStarted || gameOver) return;
     
     const updateGameState = (timestamp: number) => {
-      // Spawn obstacles
       if (!lastObstacleTimeRef.current || timestamp - lastObstacleTimeRef.current > OBSTACLE_SPAWN_INTERVAL / obstacleSpeed) {
         const minHeight = 50;
         const maxHeight = gameHeightRef.current - OBSTACLE_GAP - minHeight;
@@ -119,33 +113,28 @@ const FlappyGame: React.FC = () => {
         lastObstacleTimeRef.current = timestamp;
       }
       
-      // Update bird position
       const newVelocity = birdVelocity + GRAVITY;
       const newY = birdPosition.y + newVelocity;
-      const newRotation = Math.min(90, Math.max(-30, newVelocity * 3));
+      const newRotation = Math.min(90, Math.max(-45, newVelocity * 2));
       
       setBirdVelocity(newVelocity);
       setBirdPosition(prev => ({ ...prev, y: newY }));
       setBirdRotation(newRotation);
       
-      // Update obstacles and check for collisions
       setObstacles(prev => {
         return prev
           .map(obstacle => {
             const newX = obstacle.x - obstacleSpeed * 5;
             
-            // Check if bird passed the obstacle
             if (!obstacle.passed && newX + OBSTACLE_WIDTH < BIRD_X_POSITION) {
               setScore(s => {
                 const newScore = s + 1;
                 
-                // Increase speed every 5 points
                 if (newScore % 5 === 0) {
                   setObstacleSpeed(prev => Math.min(3, prev + OBSTACLE_SPEED_INCREMENT));
                   toast(`Speed increased! Level ${Math.floor(newScore / 5) + 1}`);
                 }
                 
-                // Update high score if needed
                 if (newScore > highScore) {
                   setHighScore(newScore);
                   localStorage.setItem('anyoFlappyHighScore', newScore.toString());
@@ -162,19 +151,16 @@ const FlappyGame: React.FC = () => {
           .filter(obstacle => obstacle.x > -OBSTACLE_WIDTH);
       });
       
-      // Check for collision with ground/ceiling
       if (newY <= 0 || newY >= gameHeightRef.current - BIRD_SIZE) {
         handleGameOver();
         return;
       }
       
-      // Check for collision with obstacles
       for (const obstacle of obstacles) {
         if (
           BIRD_X_POSITION + BIRD_SIZE > obstacle.x &&
           BIRD_X_POSITION < obstacle.x + OBSTACLE_WIDTH
         ) {
-          // Check if bird is in the gap
           const isInGap = 
             birdPosition.y > obstacle.height &&
             birdPosition.y + BIRD_SIZE < obstacle.height + OBSTACLE_GAP;
@@ -225,11 +211,9 @@ const FlappyGame: React.FC = () => {
       className="game-container w-full h-full min-h-[600px] relative overflow-hidden"
       onClick={gameStarted && !gameOver ? handleJump : undefined}
     >
-      {/* Background elements */}
       <div className="absolute inset-0 z-0 bg-gradient-to-b from-black via-red-900/40 to-black">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black/80"></div>
         
-        {/* Stars */}
         {Array.from({ length: 50 }).map((_, i) => (
           <div
             key={i}
@@ -246,7 +230,6 @@ const FlappyGame: React.FC = () => {
         ))}
       </div>
       
-      {/* Game elements */}
       <Bird
         position={birdPosition}
         rotation={birdRotation}
@@ -254,7 +237,6 @@ const FlappyGame: React.FC = () => {
         isDead={gameOver}
       />
       
-      {/* Render obstacles */}
       {obstacles.map((obstacle, index) => (
         <React.Fragment key={index}>
           <Obstacle
@@ -274,14 +256,11 @@ const FlappyGame: React.FC = () => {
         </React.Fragment>
       ))}
       
-      {/* UI Elements */}
       <ScoreBoard score={score} highScore={highScore} />
       
-      {/* Game states */}
       {!gameStarted && <StartScreen onStart={startGame} />}
       {gameOver && <GameOver score={score} highScore={highScore} onRestart={startGame} />}
       
-      {/* Footer with attribution */}
       <div className="absolute bottom-3 left-0 right-0 mx-auto text-center text-white/40 text-xs z-30">
         <p>ANYO Flappy Bird • Built for the ANYO_nft community</p>
       </div>
